@@ -56,6 +56,10 @@ export class AuthService {
         hashedRt: null,
       },
     });
+    return {
+      message: 'Logout successfully',
+      status: 200,
+    };
   }
 
   async refreshTokens(id: number, rt: string) {
@@ -95,11 +99,11 @@ export class AuthService {
     const [at, rt] = await Promise.all([
       this.jwtService.signAsync(jwtPayload, {
         secret: 'at-secret',
-        expiresIn: '15m',
+        expiresIn: 10,
       }),
       this.jwtService.signAsync(jwtPayload, {
         secret: 'rt-secret',
-        expiresIn: '7d',
+        expiresIn: 60 * 10,
       }),
     ]);
 

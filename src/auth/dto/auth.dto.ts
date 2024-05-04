@@ -9,3 +9,8 @@ export class AuthDto {
   @IsString()
   password: string;
 }
+
+export class GoogleSignInCredentialsDto {
+  @IsString()
+  token: string;
+}

@@ -7,7 +7,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { AuthDto } from './dto';
+import { AuthDto, GoogleSignInCredentialsDto } from './dto';
 import { JwtPayload, Tokens } from './types';
 import { AtJwtAuthGuard, RtJwtAuthGuard } from 'src/guards';
 import { GetUser } from 'src/decorators/get-user.decorator';
@@ -27,6 +27,11 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   signinLocal(@Body() authDto: AuthDto): Promise<Tokens> {
     return this.authService.signinLocal(authDto);
+  }
+
+  @Post('/google/signin')
+  GoogleSignIn(@Body() googleSignInCredentialsDto: GoogleSignInCredentialsDto) {
+    return this.authService.googleSignIn(googleSignInCredentialsDto);
   }
 
   @UseGuards(AtJwtAuthGuard)

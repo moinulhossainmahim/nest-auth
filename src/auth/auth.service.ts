@@ -1,6 +1,6 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { AuthDto } from './dto/auth.dto';
+import { AuthDto, GoogleSignInCredentialsDto } from './dto/auth.dto';
 import * as bcrypt from 'bcrypt';
 import { JwtPayload, Tokens } from './types';
 import { JwtService } from '@nestjs/jwt';
@@ -42,6 +42,10 @@ export class AuthService {
     await this.updateRtHash(user.id, tokens.refreshToken);
 
     return tokens;
+  }
+
+  googleSignIn(googleSignInCredentialsDto: GoogleSignInCredentialsDto) {
+    console.log(googleSignInCredentialsDto);
   }
 
   async logout(userId: number) {

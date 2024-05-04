@@ -12,6 +12,7 @@ import { JwtPayload, Tokens } from './types';
 import { AtJwtAuthGuard, RtJwtAuthGuard } from 'src/guards';
 import { GetUser } from 'src/decorators/get-user.decorator';
 import { JwtPayloadWithRt } from './types';
+import { LoginResponse } from './types/loginResponse';
 
 @Controller('auth')
 export class AuthController {
@@ -25,12 +26,16 @@ export class AuthController {
 
   @Post('local/signin')
   @HttpCode(HttpStatus.OK)
-  signinLocal(@Body() authDto: AuthDto): Promise<Tokens> {
+  signinLocal(
+    @Body() authDto: Omit<AuthDto, 'fullName'>,
+  ): Promise<LoginResponse> {
     return this.authService.signinLocal(authDto);
   }
 
   @Post('/google/signin')
-  GoogleSignIn(@Body() googleSignInCredentialsDto: GoogleSignInCredentialsDto) {
+  GoogleSignIn(
+    @Body() googleSignInCredentialsDto: GoogleSignInCredentialsDto,
+  ): Promise<LoginResponse> {
     return this.authService.googleSignIn(googleSignInCredentialsDto);
   }
 

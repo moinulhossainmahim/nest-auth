@@ -4,6 +4,8 @@ import { AuthDto, GoogleSignInCredentialsDto } from './dto/auth.dto';
 import * as bcrypt from 'bcrypt';
 import { JwtPayload, Tokens } from './types';
 import { JwtService } from '@nestjs/jwt';
+import { OAuth2Client } from 'google-auth-library';
+import { LoginResponse } from './types/loginResponse';
 
 @Injectable()
 export class AuthService {
@@ -19,6 +21,7 @@ export class AuthService {
       data: {
         email: authDto.email,
         hash,
+        fullName: authDto.fullName,
       },
     });
     const tokens = await this.getTokens(newUser.id, newUser.email);
@@ -26,26 +29,82 @@ export class AuthService {
     return tokens;
   }
 
-  async signinLocal(dto: AuthDto): Promise<Tokens> {
+  async signinLocal(
+    authDto: Omit<AuthDto, 'fullName'>,
+  ): Promise<LoginResponse> {
     const user = await this.prisma.user.findUnique({
       where: {
-        email: dto.email,
+        email: authDto.email,
       },
     });
 
     if (!user) throw new ForbiddenException('Access Denied');
 
-    const passwordMatches = await bcrypt.compare(dto.password, user.hash);
+    const passwordMatches = await bcrypt.compare(authDto.password, user.hash);
     if (!passwordMatches) throw new ForbiddenException('Access Denied');
 
     const tokens = await this.getTokens(user.id, user.email);
     await this.updateRtHash(user.id, tokens.refreshToken);
 
-    return tokens;
+    return {
+      ...tokens,
+      picture: user.picture,
+      fullName: user.fullName,
+      email: user.email,
+      isGoogleLogin: user.isGoogleLogin,
+    };
   }
 
-  googleSignIn(googleSignInCredentialsDto: GoogleSignInCredentialsDto) {
-    console.log(googleSignInCredentialsDto);
+  async googleSignIn(
+    googleSignInCredentialsDto: GoogleSignInCredentialsDto,
+  ): Promise<LoginResponse> {
+    const client = new OAuth2Client(
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET,
+      'postmessage',
+    );
+
+    const { tokens: googleTokens } = await client.getToken(
+      googleSignInCredentialsDto.code,
+    );
+    const profile = await client.verifyIdToken({
+      idToken: googleTokens.id_token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const email = profile.getPayload().email;
+    const fullName = profile.getPayload().name;
+    const picture = profile.getPayload().picture;
+
+    console.log('image', profile.getPayload());
+
+    let user = await this.prisma.user.findUnique({
+      where: {
+        email,
+      },
+    });
+
+    if (!user) {
+      user = await this.prisma.user.create({
+        data: {
+          email,
+          isGoogleLogin: true,
+          picture,
+          fullName,
+        },
+      });
+    }
+
+    const tokens = await this.getTokens(user.id, user.email);
+    await this.updateRtHash(user.id, tokens.refreshToken);
+
+    return {
+      ...tokens,
+      picture: user.picture,
+      fullName: user.fullName,
+      email: user.fullName,
+      isGoogleLogin: user.isGoogleLogin,
+    };
   }
 
   async logout(userId: number) {

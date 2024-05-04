@@ -8,9 +8,13 @@ export class AuthDto {
   @IsNotEmpty()
   @IsString()
   password: string;
+
+  @IsNotEmpty()
+  @IsString()
+  fullName: string;
 }
 
 export class GoogleSignInCredentialsDto {
   @IsString()
-  token: string;
+  code: string;
 }
